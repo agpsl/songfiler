@@ -6,21 +6,34 @@
 #
 # <input_dir> the directory (or the parent directory) where your mp3 files are
 # <output_dir> the directory where your mp3 files will be moved to
+# [safe] display the info without modifying or moving files
 #
 # Ain't pretty but it's honest work
 
 # Fancy colors
 RED=$(tput setaf 1)
 GREEN=$(tput setaf 2)
+BLUE=$(tput setaf 4)
 RESET=$(tput sgr0)
 
 # Use based variables names instead of cringe numbers
 INPUT_DIR="$1"
 OUTPUT_DIR="$2"
+SAFE="$3"
 
-# Check if all parameters were passed
-if ! [ $# = 2 ]; then
-    echo "Usage: $0 <input_dir> <output_dir>"
+# Check for the correct number of parameters
+if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+    echo "Usage: $0 <input_dir> <output_dir> [safe]"
+    exit 1
+fi
+
+# Check if safe mode is enabled
+if [ "$SAFE" = "safe" ]; then
+    printf "%s\n" "${BLUE}Safe mode enabled. Files won't be moved or renamed.${RESET}"
+elif [ "$SAFE" = "" ]; then
+    printf "%s\n" "${BLUE}Safe mode disabled. Files will be moved and renamed.${RESET}"
+else
+    echo "Usage: $0 <input_dir> <output_dir> [safe]"
     exit 1
 fi
 
@@ -75,11 +88,13 @@ echo "$SONGS" | while read -r SONG; do
     MUSIC_DIR="$OUTPUT_DIR/$ARTIST/$ALBUM"
     FILE_NAME="$TRACK $TITLE.mp3"
 
-    # Attempt to create the dir structure if it doesn't exist
-    [ -d "$MUSIC_DIR" ] || mkdir -p "$MUSIC_DIR"
+    if [ "$SAFE" != "safe" ]; then
+        # Attempt to create the dir structure if it doesn't exist
+        [ -d "$MUSIC_DIR" ] || mkdir -p "$MUSIC_DIR"
 
-    # Move the file to the appropriate dir and and rename it
-    mv "$SONG" "$MUSIC_DIR/$FILE_NAME"
+        # Move the file to the appropriate dir and and rename it
+        mv "$SONG" "$MUSIC_DIR/$FILE_NAME"
+    fi
 
     # Print message in the terminal informing the changes
     printf "%s\n" "${GREEN}$SONG -> $MUSIC_DIR/$FILE_NAME${RESET}"
