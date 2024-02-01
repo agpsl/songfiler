@@ -1,0 +1,90 @@
+#!/bin/sh
+#
+# Script to recursively search for mp3 files inside <input_dir>,
+# rename them as "<Track #> <Song title>.mp3" and move them
+# to the "<Artist>/<Album title>" directory inside <output_dir>
+#
+# <input_dir> the directory (or the parent directory) where your mp3 files are
+# <output_dir> the directory where your mp3 files will be moved to
+#
+# Ain't pretty but it's honest work
+
+# Fancy colors
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+RESET=$(tput sgr0)
+
+# Use based variables names instead of cringe numbers
+INPUT_DIR="$1"
+OUTPUT_DIR="$2"
+
+# Check if all parameters were passed
+if ! [ $# = 2 ]; then
+    echo "Usage: $0 <input_dir> <output_dir>"
+    exit 1
+fi
+
+# Check if id3v2 is installed
+if ! command -v id3v2 > /dev/null; then
+    printf "%s\n" "${RED}Can't find id3v2 on your system${RESET}"
+    exit 1
+fi
+
+# Check if <input_dir> exists
+if ! [ -d "$INPUT_DIR" ]; then
+    printf "%s\n" "${RED}Error: directory $INPUT_DIR not found${RESET}"
+    exit 1
+fi
+
+# Check if <output_dir> is writable
+if ! [ -w "$OUTPUT_DIR" ]; then
+    printf "%s\n" "${RED}Error: directory $OUTPUT_DIR is not writable by your user${RESET}"
+    exit 1
+fi
+
+# Look recursively for mp3 files
+SONGS=$(find "$INPUT_DIR" -iname '*.mp3';)
+
+# Check if any songs were found
+if [ -z "$SONGS" ]; then
+    printf "%s\n" "${RED}No songs were found${RESET}"
+    exit 1
+fi
+
+# Loop through the mp3s found
+echo "$SONGS" | while read -r SONG; do
+    
+    # Get id3 info from the file and clean up the data
+    SONG_DATA=$(id3v2 -l "$SONG")
+
+    # Store the important bits on variables
+    ALBUM=$(echo "$SONG_DATA" | grep TALB | sed 's/^.*: //g;s|/|_|g')
+    ARTIST=$(echo "$SONG_DATA" | grep TPE1 | sed 's/^.*: //g;s|/|_|g')
+    TRACK=$(echo "$SONG_DATA" | grep TRCK | cut -d: -f2 | cut -d/ -f1 | cut -d" " -f2)
+    TITLE=$(echo "$SONG_DATA" | grep TIT2 | sed 's/^.*: //g;s|/|_|g')
+    
+    # Check if the track has all the basic info we need
+    # If not, show a message and go to the next song    
+    if [ -z "$ALBUM" ] || [ -z "$ARTIST" ] || [ -z "$TRACK" ] || [ -z "$TITLE" ]; then
+	printf "%s\n" "${RED}$SONG is missing id3 values. \
+		Set them manually with id3v2 and try again${RESET}"
+	continue
+    fi
+
+    # Create variables to store the new path and file name
+    MUSIC_DIR="$OUTPUT_DIR/$ARTIST/$ALBUM"
+    FILE_NAME="$TRACK $TITLE.mp3"
+
+    # Attempt to create the dir structure if it doesn't exist
+    [ -d "$MUSIC_DIR" ] || mkdir -p "$MUSIC_DIR"
+
+    # Move the file to the appropriate dir and and rename it
+    mv "$SONG" "$MUSIC_DIR/$FILE_NAME"
+
+    # Print message in the terminal informing the changes
+    printf "%s\n" "${GREEN}$SONG -> $MUSIC_DIR/$FILE_NAME${RESET}"
+
+done  
+
+# Exit from the script
+exit 0
