@@ -2,6 +2,8 @@
 
 Script to recursively search for mp3 files inside `<input_dir>`, rename as `<Track #> <Song title>.mp3` and move them to the `<Artist>/<Album title>` directory inside `<output_dir>`
 
+Tested on Linux (Gentoo), but since it is POSIX compliant, it _should_ work on macOS and WSL as well.
+
 ## Usage
 
 Usage: `songfiler <input_dir> <output_dir> [safe]`

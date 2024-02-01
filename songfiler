@@ -70,7 +70,6 @@ echo "$SONGS" | while read -r SONG; do
     # Get id3 info from the file and clean up the data
     SONG_DATA=$(id3v2 -l "$SONG")
 
-    # Store the important bits on variables
     ALBUM=$(echo "$SONG_DATA" | grep TALB | sed 's/^.*: //g;s|/|_|g')
     ARTIST=$(echo "$SONG_DATA" | grep TPE1 | sed 's/^.*: //g;s|/|_|g')
     TRACK=$(echo "$SONG_DATA" | grep TRCK | cut -d: -f2 | cut -d/ -f1 | cut -d" " -f2)
@@ -84,22 +83,17 @@ echo "$SONGS" | while read -r SONG; do
 	continue
     fi
 
-    # Create variables to store the new path and file name
     MUSIC_DIR="$OUTPUT_DIR/$ARTIST/$ALBUM"
     FILE_NAME="$TRACK $TITLE.mp3"
 
     if [ "$SAFE" != "safe" ]; then
         # Attempt to create the dir structure if it doesn't exist
         [ -d "$MUSIC_DIR" ] || mkdir -p "$MUSIC_DIR"
-
-        # Move the file to the appropriate dir and and rename it
         mv "$SONG" "$MUSIC_DIR/$FILE_NAME"
     fi
 
-    # Print message in the terminal informing the changes
     printf "%s\n" "${GREEN}$SONG -> $MUSIC_DIR/$FILE_NAME${RESET}"
 
 done  
 
-# Exit from the script
 exit 0
