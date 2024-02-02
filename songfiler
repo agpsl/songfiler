@@ -23,15 +23,21 @@ SAFE="$3"
 
 # Check for the correct number of parameters
 if [ $# -lt 2 ] || [ $# -gt 3 ]; then
-    echo "Usage: $0 <input_dir> <output_dir> [safe]"
+    printf "%s\n" "Usage: $0 <input_dir> <output_dir> [safe]"
     exit 1
 fi
 
-# Check if safe mode is enabled
+# Check if safe mode is enabled. If not, ask for user confirmation.
 if [ "$SAFE" = "safe" ]; then
     printf "%s\n" "${BLUE}Safe mode enabled. Files won't be moved or renamed.${RESET}"
 elif [ "$SAFE" = "" ]; then
     printf "%s\n" "${BLUE}Safe mode disabled. Files will be moved and renamed.${RESET}"
+    printf "Are you sure? [yN] "
+    read -r r
+    if ! { [ "$r" = "y" ] || [ "$r" = "Y" ]; }; then
+        printf "%s\n\n" "${BLUE}Aborted${RESET}"
+        exit 1
+    fi
 else
     echo "Usage: $0 <input_dir> <output_dir> [safe]"
     exit 1
